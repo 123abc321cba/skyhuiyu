@@ -1,0 +1,125 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（留空则读取工程里的 MARKETING_VERSION）"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  ipa:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 环境信息
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+          sw_vers
+
+      - name: 解析版本号
+        id: ver
+        working-directory: "ios/源码"
+        run: |
+          V="${{ github.event.inputs.version }}"
+          if [ -z "$V" ]; then
+            V=$(grep -m1 -o 'MARKETING_VERSION=[0-9.]*' SkyHuiyu.xcodeproj/project.pbxproj | cut -d= -f2)
+          fi
+          if [ -z "$V" ]; then
+            echo "读取 MARKETING_VERSION 失败" >&2
+            exit 1
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "版本：$V"
+
+      - name: 工程检查
+        working-directory: "ios/源码"
+        run: xcodebuild -list -project SkyHuiyu.xcodeproj
+
+      - name: 编译（不签名）
+        working-directory: "ios/源码"
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project SkyHuiyu.xcodeproj \
+            -scheme SkyHuiyu \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/SkyHuiyu.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            clean archive 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: 打包成 Payload/IPA
+        run: |
+          set -euo pipefail
+          APP=$(find "$RUNNER_TEMP/SkyHuiyu.xcarchive/Products/Applications" -maxdepth 1 -name "*.app" | head -n1)
+          if [ -z "$APP" ]; then
+            echo "归档里没有 .app" >&2
+            exit 1
+          fi
+          echo "APP=$APP"
+
+          mkdir -p "$RUNNER_TEMP/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/Payload/"
+
+          NAME="SkyHuiyu-${{ steps.ver.outputs.version }}-unsigned.ipa"
+          ( cd "$RUNNER_TEMP" && zip -qry "$NAME" Payload )
+
+          shasum -a 256 "$RUNNER_TEMP/$NAME" > "$RUNNER_TEMP/SHA256SUMS.txt"
+          cat "$RUNNER_TEMP/SHA256SUMS.txt"
+
+          {
+            echo "### sky·徽遇 iOS IPA"
+            echo ""
+            echo "- 版本：\`${{ steps.ver.outputs.version }}\`"
+            echo "- 文件：\`$NAME\`"
+            echo "- 大小：$(du -h "$RUNNER_TEMP/$NAME" | cut -f1)"
+            echo "- 说明：未签名 IPA，安装前需用 AltStore / Sideloadly / 开发者证书自签；"
+            echo "  NFC 需要开发者账号开启 NFC capability。"
+            echo ""
+            echo '```'
+            cat "$RUNNER_TEMP/SHA256SUMS.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkyHuiyu-${{ steps.ver.outputs.version }}-ipa
+          path: |
+            ${{ runner.temp }}/*.ipa
+            ${{ runner.temp }}/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: 附加到 Release（推 tag 时）
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ runner.temp }}/*.ipa
+            ${{ runner.temp }}/SHA256SUMS.txt
+          fail_on_unmatched_files: true

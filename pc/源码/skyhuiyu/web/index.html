@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>sky·徽遇</title>
+<style>
+  :root{
+    --bg:#0b0e13; --panel:#141922; --panel2:#1a212c; --line:#242c39;
+    --text:#e7eefc; --dim:#8595ab; --accent:#3d7bf7; --ok:#3ddc97; --warn:#ffb454; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.55 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  code,.mono{font-family:ui-monospace,Consolas,monospace}
+
+  header{display:flex;align-items:center;gap:18px;padding:14px 22px;
+         background:linear-gradient(180deg,#121722,#0e121a);border-bottom:1px solid var(--line)}
+  .brand{font-size:17px;font-weight:700;letter-spacing:.5px}
+  .brand small{font-weight:400;color:var(--dim);font-size:12px;margin-left:8px}
+  nav{display:flex;gap:4px;margin-left:auto}
+  nav button{background:transparent;border:1px solid transparent;color:var(--dim);
+             padding:7px 16px;border-radius:9px;cursor:pointer;font-size:14px}
+  nav button:hover{color:var(--text);background:#1a212c}
+  nav button.on{background:var(--panel2);border-color:var(--line);color:var(--text)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--dim)}
+  .dot.ok{background:var(--ok)} .dot.bad{background:var(--bad)} .dot.warn{background:var(--warn)}
+
+  main{padding:22px;max-width:1180px;margin:0 auto}
+  section{display:none}
+  section.on{display:block}
+  h2{font-size:15px;color:var(--dim);font-weight:600;margin:0 0 12px;letter-spacing:.6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+
+  .pairwrap{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+  .qrbox{background:#fff;border-radius:14px;padding:14px}
+  .qrbox img{display:block;width:260px;height:260px;image-rendering:pixelated}
+  .kv{display:grid;grid-template-columns:88px 1fr;gap:8px 14px;font-size:13px}
+  .kv span{color:var(--dim)}
+  .steps{counter-reset:s;padding-left:0;list-style:none;margin:0}
+  .steps li{counter-increment:s;margin:7px 0;padding-left:26px;position:relative;color:#c8d5e8}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:1px;width:18px;height:18px;
+    border-radius:50%;background:var(--panel2);color:var(--dim);font-size:11px;
+    display:flex;align-items:center;justify-content:center}
+
+  .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+  .toolbar input[type=search]{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+      padding:8px 12px;border-radius:9px;width:240px;outline:none}
+  .grow{flex:1}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:14px}
+  .badge{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;
+         display:flex;gap:12px;align-items:center;transition:border-color .15s}
+  .badge:hover{border-color:#31405a}
+  .badge .ico{width:56px;height:56px;flex:0 0 56px;border-radius:12px;background:var(--panel2);
+              display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .badge .ico img{width:100%;height:100%;object-fit:contain}
+  .badge .ico span{font-size:20px;color:#3a465c}
+  .badge .meta{min-width:0;flex:1}
+  .badge .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge .sub{color:var(--dim);font-size:12px;margin-top:2px}
+  .badge .act{margin-top:8px}
+  /* 未拥有的章：淡化 + 去色，但仍然完整显示（图鉴形态） */
+  .badge.off{opacity:.34;filter:grayscale(.9)}
+  .badge.off:hover{opacity:.65;filter:grayscale(.45)}
+  .badge.off .ico{background:#11151b}
+  .badge.own{border-color:#2a4a68;box-shadow:0 0 0 1px #1d2f44 inset}
+  .badge .nm .tag{font-size:10px;padding:1px 6px;border-radius:6px;margin-left:6px;
+                  background:#10241c;color:var(--ok);border:1px solid #1e4f3a;vertical-align:middle}
+
+  .pill{font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+  .pill.s-verified{color:var(--ok);border-color:#1e4f3a;background:#10241c}
+  .pill.s-cooldown{color:var(--warn);border-color:#55401d;background:#241d10}
+  .pill.s-failed,.pill.s-error{color:var(--bad);border-color:#4f1e1e;background:#241212}
+  .pill.s-pending,.pill.s-stored{color:#8fb6ff;border-color:#1e2f4f;background:#101a24}
+  /* 验章回了 ok 但库存里核对不到 —— 就是"提示存了其实没存"的那个状态，必须显眼 */
+  .pill.s-unconfirmed{color:var(--warn);border-color:#6b4a12;background:#2a1d08;
+                      box-shadow:0 0 0 1px #3a2a0a inset}
+
+  button{background:var(--panel2);border:1px solid var(--line);color:var(--text);
+         padding:7px 14px;border-radius:9px;cursor:pointer;font-size:13px}
+  button:hover{border-color:#3a4a66}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{filter:brightness(1.08)}
+  button.sm{padding:4px 10px;font-size:12px}
+
+  .banner{border-radius:12px;padding:14px 16px;margin-bottom:16px;border:1px solid var(--line)}
+  .banner.bad{border-color:#5a2626;background:#22110f}
+  .banner .t{font-weight:700;color:#ff9d9d;margin-bottom:8px}
+  textarea{width:100%;background:#0d1117;color:#cfe0f5;border:1px solid #2a3342;border-radius:10px;
+           padding:12px;font:12px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .dim{color:var(--dim)}
+  .switch{display:flex;align-items:center;gap:8px;color:#c8d5e8}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{color:var(--dim);font-weight:500;text-align:left;padding:11px 14px}
+  #toast{position:fixed;right:18px;bottom:18px;background:#1b2431;border:1px solid var(--line);
+         color:var(--text);padding:10px 16px;border-radius:10px;opacity:0;transition:opacity .2s;
+         pointer-events:none;max-width:440px}
+  #toast.on{opacity:1}
+  #toast.bad{border-color:#5a2626;background:#22110f}
+  .empty{color:var(--dim);text-align:center;padding:44px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">sky·徽遇 <small>SkyHuiyu</small></div>
+  <nav>
+    <button data-tab="pair" class="on">配对</button>
+    <button data-tab="lib">徽章库</button>
+    <button data-tab="log">记录</button>
+    <button data-tab="set">设置</button>
+  </nav>
+  <span class="dim" style="margin-left:14px;font-size:12px">
+    <span class="dot" id="dot"></span><span id="hstate">连接中…</span>
+  </span>
+</header>
+
+<main>
+  <section id="tab-pair" class="on">
+    <div id="pfBanner"></div>
+    <div class="card">
+      <div class="pairwrap">
+        <div class="qrbox"><img id="qrimg" src="/pair.png" alt="配对二维码"></div>
+        <div style="flex:1;min-width:280px">
+          <h2 style="margin-top:0">用手机扫这个码</h2>
+          <div class="kv">
+            <span>电脑地址</span><div class="mono" id="paddr">—</div>
+            <span>指纹</span><div class="mono" id="pfp">—</div>
+            <span>手机连</span><div class="mono" id="pws">—</div>
+          </div>
+          <ol class="steps" style="margin-top:18px">
+            <li>手机和电脑连同一个 Wi-Fi</li>
+            <li>打开 SkyHuiyu App，点「扫描配对码」</li>
+            <li>对着左边二维码扫一下</li>
+            <li>回到 App 点「读取 NFC 徽章」，贴卡</li>
+          </ol>
+          <div class="row" style="margin-top:16px">
+            <button onclick="reloadQR()">刷新二维码</button>
+            <span class="dim" id="devline"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-lib">
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="搜索名称 / UID / SKU" oninput="renderLib()">
+      <span class="dim" id="libstat"></span>
+      <span class="grow"></span>
+      <button onclick="refreshAll()">刷新</button>
+    </div>
+    <div class="grid" id="lib"></div>
+    <div class="empty" id="libempty" style="display:none">还没有徽章。手机配对后贴一下 NFC 章。</div>
+  </section>
+
+  <section id="tab-log">
+    <div class="toolbar">
+      <span class="dim" id="logstat"></span><span class="grow"></span>
+      <button onclick="refreshAll()">刷新</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table id="inj"></table>
+    </div>
+  </section>
+
+  <section id="tab-set">
+    <div class="card">
+      <h2 style="margin-top:0">验章</h2>
+      <label class="switch">
+        <input type="checkbox" id="autoVerify" onchange="saveCfg()">
+        收到徽章后自动提交官方（需要有效会话）
+      </label>
+      <div class="dim" style="margin-top:8px">
+        关掉就只入库，不碰官方接口。徽章照样记录、照样显示名称和图标。
+      </div>
+      <div class="row" style="margin-top:14px">
+        <label class="switch"><input type="checkbox" id="autoConsume" onchange="saveCfg()">
+          验完后自动使用（仅在只识别出一个魔法时）</label>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label class="switch"><input type="checkbox" id="autoStore" onchange="saveCfg()">
+          自动补存（用的时候发现没货，自动重新验章再重试）</label>
+      </div>
+      <div class="dim" style="margin-top:6px">
+        补存逻辑：官方回「库存不足」时，重新贴一次徽章把货补上再用。
+        只有开了上面的「自动使用」才有触发点（不消耗就没有"没货"这回事）。
+        这条链路会真的消耗魔法且官方侧不可撤销，所以默认关闭。
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">会话</h2>
+      <div class="kv" id="sessinfo"></div>
+      <div class="row" style="margin-top:12px">
+        <button onclick="checkSession()">体检</button>
+        <span class="dim">每次启动都会实测一次；会话何时失效由网易决定，不固定时长。</span>
+      </div>
+
+      <h2 style="margin-top:22px">抓取新会话</h2>
+      <div class="row" style="margin-top:6px">
+        <button class="primary" onclick="captureLight()">轻量抓取（不动游戏）</button>
+        <button onclick="launchPlatform()">启动官方平台</button>
+        <button onclick="platformsList()">看看找到哪个平台</button>
+      </div>
+      <div class="dim" style="margin-top:8px">
+        轻量模式走的是短路径：装 CA → 起代理 → 下发 PAC，然后<b>由我们启动官方平台</b>，
+        你在平台里扫码登录，会话从登录流量里自动接住。<br>
+        它<b>不改 hosts、不开 443、不清 CEF 缓存、不让开票据、不改游戏配置文件</b>，
+        所以<b>不用重启游戏</b>，退出后机器上什么都不留。<br>
+        代价：游戏自己有缓存票据时不会重登，必须走平台里的渠道/第三方账号入口。
+      </div>
+      <div class="kv" id="capinfo" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="captureOff()">收工还原</button>
+        <span class="dim">还原系统代理。轻量模式本来就没动别的东西，所以只有这一项。</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2 style="margin-top:0">服务</h2>
+      <div class="kv">
+        <span>端口</span><div class="mono" id="setport">—</div>
+        <span>版本</span><div class="mono" id="setver">—</div>
+        <span>运行</span><div class="mono" id="setup">—</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let state = {};
+
+async function jget(u){ const r = await fetch(u); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function jpost(u, body){
+  const r = await fetch(u, {method:'POST', headers:{'Content-Type':'application/json'},
+                            body: JSON.stringify(body||{})});
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error || d.message || r.status);
+  return d;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg, bad){
+  const t = $('#toast'); t.textContent = msg; t.className = 'on' + (bad?' bad':'');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.className='', 2600);
+}
+function fmtTime(ts){ if(!ts) return '—';
+  const d = new Date(ts*1000), p = n=>String(n).padStart(2,'0');
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
+
+/* 徽章状态的中文。unconfirmed 是重点：官方回了 ok、但库存里核对不到
+   （或者核对没能做成）——这时候绝不能显示成"已存入"。 */
+const STATUS_CN = {
+  stored:'已入库', pending:'待验章', verified:'已存入', used:'已使用',
+  cooldown:'冷却中', unconfirmed:'未确认', failed:'失败',
+  interrupted:'中断', retry_tag:'需重贴'
+};
+
+document.querySelectorAll('nav button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.querySelectorAll('section').forEach(s=>s.classList.remove('on'));
+    $('#tab-'+b.dataset.tab).classList.add('on');
+  };
+});
+
+async function load(){
+  try { state = await jget('/api/state'); }
+  catch(e){ toast('读不到服务状态：'+e.message, true); return; }
+
+  const pf = state.preflight || {};
+  if(pf.ok){ $('#dot').className='dot ok'; $('#hstate').textContent='会话可用'; }
+  else { $('#dot').className='dot bad'; $('#hstate').textContent = pf.detail || '会话不可用'; }
+
+  // 图鉴只在首次 / 徽章数量变化 / 手动刷新时拉，避免每 5 秒拉 115 条
+  const n = (state.stats || {}).badges || 0;
+  if (catData === null || n !== lastBadgeCount) {
+    lastBadgeCount = n;
+    await loadCatalog(true);
+  }
+
+  renderPair(); renderBanner(pf); renderLib(); renderLog(); renderSet();
+}
+
+function reloadQR(){ $('#qrimg').src = '/pair.png?t=' + Date.now(); }
+
+function renderPair(){
+  const p = state.pair || {}, c = state.config || {};
+  $('#paddr').textContent = (p.host || c.bind || '') + ':' + (p.port || c.port || '');
+  $('#pfp').textContent = p.fingerprint || '—';
+  $('#pws').textContent = 'ws://' + (p.host || '') + ':' + (p.port || '') + '/badge';
+  const devs = state.devices || [];
+  $('#devline').textContent = devs.length
+    ? `已配对 ${devs.length} 台：` + devs.map(d=>d.name||d.fingerprint).join('、')
+    : '还没有手机配对过';
+}
+
+function renderBanner(pf){
+  const box = $('#pfBanner');
+  if(pf.ok || !pf.steps){ box.innerHTML=''; return; }
+  box.innerHTML = `
+    <div class="banner bad">
+      <div class="t">会话不可用：${esc(pf.detail || pf.reason || '')}</div>
+      <textarea id="pfsteps" rows="9" readonly>${esc(pf.steps)}</textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" onclick="copySteps()">复制操作步骤</button>
+        <button onclick="checkSession()">重新体检</button>
+      </div>
+    </div>`;
+}
+
+async function copySteps(){
+  const el = $('#pfsteps'); if(!el) return;
+  try { await navigator.clipboard.writeText(el.value); toast('已复制，粘到管理员 PowerShell 执行'); }
+  catch(e){ el.focus(); el.select(); toast('已全选，按 Ctrl+C 复制', true); }
+}
+
+/* 徽章库：整本图鉴。已拥有的原色靠前，未拥有的淡化排后 */
+let catData = null;
+let lastBadgeCount = -1;
+
+async function loadCatalog(force){
+  if(catData && !force) return catData;
+  try { catData = await jget('/api/catalog'); }
+  catch(e){ catData = {count:0, owned:0, items:[]}; }
+  return catData;
+}
+
+function iconHtml(img){
+  if(!img) return `<span>✦</span>`;
+  return `<img src="/catalog/icon/${esc(img)}.png" alt="" loading="lazy"
+            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+          <span style="display:none">✦</span>`;
+}
+
+function renderLib(){
+  const data = catData || {count:0, owned:0, items:[]};
+  const q = ($('#q').value || '').trim().toLowerCase();
+  const items = q ? data.items.filter(it =>
+      (it.name||'').toLowerCase().includes(q) ||
+      (it.name_en||'').toLowerCase().includes(q) ||
+      (it.sk||'').toLowerCase().includes(q) ||
+      (it.badge && (it.badge.uid||'').toLowerCase().includes(q))) : data.items;
+
+  $('#libstat').textContent =
+    `已拥有 ${data.owned} / 共 ${data.count} 种` + (q ? `　筛选出 ${items.length}` : '');
+
+  $('#libempty').style.display = data.count ? 'none' : 'block';
+  if(!data.count){
+    $('#libempty').textContent = '徽章库还是空的（内置数据没导入）。';
+    $('#lib').innerHTML = '';
+    return;
+  }
+
+  $('#lib').innerHTML = items.map(it=>{
+    const own = it.owned;
+    const b = it.badge || {};
+    const st = b.status || '';
+    if(!own){
+      return `<div class="badge off" title="${esc(it.desc||'')}">
+        <div class="ico">${iconHtml(it.img)}</div>
+        <div class="meta">
+          <div class="nm">${esc(it.name || it.sk)}</div>
+          <div class="sub">${esc(it.desc || '未拥有')}</div>
+        </div></div>`;
+    }
+    return `<div class="badge own" title="${esc(it.effect||'')}">
+      <div class="ico">${iconHtml(it.img)}</div>
+      <div class="meta">
+        <div class="nm">${esc(it.name || it.sk)}<span class="tag">已拥有</span></div>
+        <div class="sub mono">${esc(b.uid||'')} · #${b.counter}</div>
+        <div class="sub">${fmtTime(b.received_at)} ${st?`<span class="pill s-${esc(st)}" title="${esc(b.note||'')}">${esc(STATUS_CN[st] || st)}</span>`:''}</div>
+        <div class="act"><button class="sm" onclick="verify(${b.badge_id})">提交官方</button></div>
+      </div></div>`;
+  }).join('');
+}
+
+async function verify(id){
+  if(!confirm('向官方提交这枚徽章？\n\n会消耗一次官方验证机会，不可撤销。')) return;
+  try{
+    const d = await jpost(`/api/badges/${id}/verify`, {confirm:true});
+    const inj = d.inject || {};
+    toast(`${inj.action||''} · ${inj.detail||''}`.trim(), !d.ok);
+    catData = null;   // 状态变了，图鉴重新拉，卡片上的判定才会跟着变
+    load();
+  }catch(e){ toast('提交失败：'+e.message, true); }
+}
+
+function renderLog(){
+  const rows = state.injections || [];
+  $('#logstat').textContent = `最近 ${rows.length} 条提交`;
+  if(!rows.length){ $('#inj').innerHTML = `<tr><td class="empty">还没有提交记录</td></tr>`; return; }
+  $('#inj').innerHTML = `<tr><th>时间</th><th>徽章</th><th>判定</th><th>HTTP</th><th>说明</th></tr>` +
+    rows.map(r=>`<tr style="border-top:1px solid var(--line)">
+      <td style="padding:10px 14px" class="dim">${fmtTime(r.created_at)}</td>
+      <td class="mono">${esc(r.uid||'')}${r.counter!=null?' #'+r.counter:''}</td>
+      <td><span class="pill s-${esc(r.result||'')}">${esc(r.result||'')}</span></td>
+      <td class="dim">${r.http_status||''}</td>
+      <td class="dim">${esc((r.detail||'').slice(0,120))}</td>
+    </tr>`).join('');
+}
+
+function renderSet(){
+  const c = state.config || {}, s = state.session || {};
+  $('#autoVerify').checked = (c.backend === 'netease');
+  $('#autoConsume').checked = !!c.auto_consume;
+  $('#autoStore').checked = !!c.auto_store;
+  $('#setport').textContent = (c.bind||'') + ':' + (c.port||'');
+  $('#setver').textContent = state.version || '';
+  $('#setup').textContent = (state.uptime||0) + ' 秒';
+  renderCapture();
+
+  $('#sessinfo').innerHTML = s.present ? `
+    <span>账号</span><div class="mono">${esc(s.user_id||'')}</div>
+    <span>抓取</span><div class="mono">${s.captured_at ? fmtTime(s.captured_at) : '—'}</div>
+    <span>字段</span><div class="mono">${s.has_level_id?'level✓':'level×'} ${s.has_build_key?'buildkey✓':'buildkey×'}</div>`
+    : `<span>状态</span><div class="dim">还没有抓过会话</div>`;
+}
+
+/* ---- 抓取栈（轻量模式）---- */
+async function captureLight(){
+  try{
+    toast('正在拉起抓取栈（装 CA / 起代理 / 下发 PAC）…');
+    const r = await jpost('/api/capture', {action:'enable', light:true});
+    const c = r.capture || {};
+    toast('就绪：PAC 已指向 127.0.0.1:' + (c.proxy_port||'8887') + '，去平台里扫码登录');
+    load();
+  }catch(e){ toast('失败：'+e.message, true); }
+}
+async function captureOff(){
+  try{
+    const r = await jpost('/api/capture', {action:'disable'});
+    toast('已还原：' + ((r.done||[]).join('；') || '无待还原项'));
+    load();
+  }catch(e){ toast('还原失败：'+e.message, true); }
+}
+async function launchPlatform(){
+  try{
+    toast('正在启动官方平台…');
+    const r = await jpost('/api/capture', {action:'launch_platform'});
+    const p = r.platform || {};
+    if (p.warning) {
+      toast('⚠ ' + p.warning, true);
+      setTimeout(() => alert(p.warning), 300);
+    } else {
+      toast('平台已启动 pid=' + (p.pid||'?') + '　在平台里扫码登录');
+    }
+  }catch(e){ toast('启动失败：'+e.message, true); }
+}
+async function platformsList(){
+  try{
+    const r = await jpost('/api/capture', {action:'platforms'});
+    const c = r.candidates || [];
+    if(!c.length){ toast('没扫到平台程序', true); return; }
+    toast('找到 ' + c.length + ' 个，首选：' + c[0].split('\\').slice(-2).join('\\'));
+    console.log('平台候选：', c);
+  }catch(e){ toast('扫描失败：'+e.message, true); }
+}
+function renderCapture(){
+  const c = state.capture;
+  const el = $('#capinfo');
+  if(!el) return;
+  if(!c){ el.innerHTML = '<span>抓取栈</span><div class="dim">未装配</div>'; return; }
+  const yn = v => v ? '✅' : '❌';
+  const hs = c.proxy_hosts || {mitm:[], blind:[]};
+  const fmtHosts = a => (a||[]).slice(0,5).map(([h,n]) => `${esc(h)}×${n}`).join('<br>') || '<span class="dim">—</span>';
+  el.innerHTML = `
+    <span>CA / 代理</span><div class="mono">${yn(c.ca_installed)} / ${yn(c.local_proxy_ready)} :${c.proxy_port||''}</div>
+    <span>PAC 下发</span><div class="mono">${yn(c.proxy_owned)}　${esc(c.pac_url||'')}</div>
+    <span>流量 / 抓取</span><div class="mono">${c.proxy_flows||0} / ${c.proxy_captured||0}</div>
+    <span>hosts / 443</span><div class="mono">${yn(c.hosts_enabled)} / ${yn(c.port443_ready)}　<span class="dim">轻量模式应全为 ❌</span></div>
+    <span>走代理的域名</span><div class="mono">${fmtHosts(hs.mitm)}</div>
+    <span>交过来但没拦</span><div class="mono">${fmtHosts(hs.blind)}</div>`;
+  if (!hs.mitm.length && !hs.blind.length && c.local_proxy_ready) {
+    el.innerHTML += `<div class="dim" style="grid-column:1/-1;margin-top:6px">
+      ⚠ 一条流量都还没经过代理。可能是平台早就开着（连接池已建立，不会再读 PAC），
+      也可能是你还没在平台里操作过。先完全退出平台再点「启动官方平台」。</div>`;
+  }
+}
+
+async function saveCfg(){  try{
+    await jpost('/api/config', {
+      backend: $('#autoVerify').checked ? 'netease' : 'local',
+      auto_consume: $('#autoConsume').checked,
+      auto_store: $('#autoStore').checked,
+    });
+    toast('已保存'); load();
+  }catch(e){ toast('保存失败：'+e.message, true); }
+}
+
+async function checkSession(){
+  toast('体检中…');
+  try{
+    const d = await jget('/api/session/check');
+    toast(d.ok ? '会话可用' : '会话不可用：' + (d.detail||''), !d.ok);
+  }catch(e){ toast('没有可用会话', true); }
+  load();
+}
+
+async function refreshAll(){ catData = null; await load(); toast('已刷新'); }
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>
+
+
+

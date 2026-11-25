@@ -1,0 +1,53 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- 构建中间产物 ----
+build/
+dist/
+*.manifest
+*.toc
+build_log.txt
+.gradle/
+.kotlin/
+local.properties
+*.iml
+DerivedData/
+*.xcarchive
+
+# ---- 运行时数据：会话、凭据、数据库、日志 ----
+config.json
+*.db
+*.db-wal
+*.db-shm
+*.log
+logs/
+capture-bodies/
+*.pem
+*.key
+*.crt
+*.cer
+ca/
+ca-bundle.pem
+winhttp-backup.txt
+proxy.pac
+capture-state.json
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+
+# ---- 编译出的大文件走 Releases ----
+pc/程序/*.exe
+release/*.exe

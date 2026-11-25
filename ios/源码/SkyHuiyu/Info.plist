@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh-Hans</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>SkyHuiyu</string>
+    <key>CFBundleDisplayName</key>
+    <string>sky·徽遇</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <string>nfc</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- NFC：读光遇徽章 -->
+    <key>NFCReaderUsageDescription</key>
+    <string>SkyHuiyu 需要使用 NFC 读取光遇星空徽章的链接</string>
+    <key>com.apple.developer.nfc.readersession.formats</key>
+    <array>
+        <string>NDEF</string>
+        <string>TAG</string>
+    </array>
+
+    <!-- 相机：扫 PC 的配对二维码 -->
+    <key>NSCameraUsageDescription</key>
+    <string>SkyHuiyu 需要使用相机扫描 PC 上的配对二维码</string>
+
+    <!-- 局域网：iOS 14+ 没有这条会直接连不上同网段的 PC（而且不弹任何提示） -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>SkyHuiyu 需要访问局域网以连接同一 Wi-Fi 下的电脑端</string>
+
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+</dict>
+</plist>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0E1116"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#E8F0FF"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/tagline"
+            android:textColor="#7C8CA6"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="#161B23"
+            android:padding="14dp"
+            android:text="@string/status_idle"
+            android:textColor="#9FE7B8"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/pairText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/not_paired"
+            android:textColor="#B8C6DC"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/pairButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/btn_pair" />
+
+        <Button
+            android:id="@+id/connectButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/btn_connect" />
+
+        <Button
+            android:id="@+id/readButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:enabled="false"
+            android:text="@string/btn_read" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/history_title"
+            android:textColor="#7C8CA6"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/historyText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="#C9D6E8"
+            android:textSize="13sp"
+            android:lineSpacingExtra="3dp" />
+    </LinearLayout>
+</ScrollView>

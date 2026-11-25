@@ -1,0 +1,7 @@
+aiohttp>=3.9,<4
+cryptography>=42
+qrcode>=7.4
+pillow>=10
+
+# 抓取栈不依赖 mitmproxy。PAC 与代理同端口、CA 自动装 CurrentUser、443 透传、
+# WinINet 下发/还原 —— 这四件事 mitmproxy 替不了，所以自己实现（skyhuiyu/capture/）。

@@ -1,0 +1,12 @@
+{
+  "bind": "0.0.0.0",
+  "port": 8765,
+  "advertise_host": "",
+  "backend": "local",
+  "account": "default",
+  "auto_consume": false,
+  "allowed_fingerprints": [],
+  "inject_timeout": 20.0,
+  "open_browser": true,
+  "log_level": "INFO"
+}

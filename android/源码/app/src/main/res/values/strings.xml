@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">sky·徽遇</string>
+    <string name="tagline">贴卡 · 上传 · 验章</string>
+    <string name="status_idle">未连接</string>
+    <string name="not_paired">未配对。打开电脑端面板，扫上面的二维码。</string>
+    <string name="btn_pair">扫描配对码</string>
+    <string name="btn_connect">重新连接</string>
+    <string name="btn_read">读取 NFC 徽章</string>
+    <string name="history_title">最近记录</string>
+    <string name="scan_prompt">对准电脑面板上的二维码</string>
+</resources>
