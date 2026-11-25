@@ -3,9 +3,6 @@
 手机贴 NFC 徽章 → 局域网加密上传 → 电脑收下 → 用玩家自己的游戏会话把徽章验到官方账号上。
 Windows / Android / iOS 三端源码都在这里；Windows 与 Android 提供预编译包，iOS 的 IPA 由 GitHub Actions 构建。
 
-> 非官方项目，与网易、thatgamecompany 及其关联方没有任何关系。
-> 本项目代码为自行实现，未包含第三方项目的源码；使用的开源依赖归各自作者所有。
-
 ---
 
 ## 功能
