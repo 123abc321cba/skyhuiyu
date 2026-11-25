@@ -1,8 +1,7 @@
 # sky·徽遇（SkyHuiyu）
 
 手机贴 NFC 徽章 → 局域网加密上传 → 电脑收下 → 用玩家自己的游戏会话把徽章验到官方账号上。
-Windows / Android / iOS 三端源码都在这里；Windows 与 Android 提供预编译包，
-iOS 需在 macOS 上用 Xcode 构建（Windows 上无法编译）。
+Windows / Android / iOS 三端源码都在这里；Windows 与 Android 提供预编译包，iOS 的 IPA 由 GitHub Actions 构建。
 
 > 非官方项目，与网易、thatgamecompany 及其关联方没有任何关系。
 > 本项目代码为自行实现，未包含第三方项目的源码；使用的开源依赖归各自作者所有。
@@ -30,7 +29,7 @@ iOS 需在 macOS 上用 Xcode 构建（Windows 上无法编译）。
 SkyHuiyu/
 ├─ README.md
 ├─ LICENSE                        MIT
-├─ release/                       编译产物（exe / apk + 校验和）
+├─ release/                       apk / ipa + 校验和（exe 见 Releases）
 ├─ pc/
 │  ├─ 源码/                       Python 包、测试、构建脚本
 │  └─ 程序/                       启动.bat / 抓取会话.bat（exe 见 Releases）
@@ -38,7 +37,8 @@ SkyHuiyu/
 │  ├─ 源码/                       Gradle 工程 + Kotlin 源码
 │  └─ 安装包/                     skyhuiyu-2.0.0-debug.apk
 └─ ios/
-   └─ 源码/                       Swift / Xcode 工程
+   ├─ 源码/                       Swift / Xcode 工程
+   └─ 安装包/                     SkyHuiyu-2.0.0-unsigned.ipa（Actions 构建）
 ```
 
 ---
@@ -151,6 +151,9 @@ xcodebuild -project SkyHuiyu.xcodeproj -scheme SkyHuiyu \
 产物是未签名 IPA，用 AltStore / Sideloadly / 开发者证书签名后安装；
 NFC 需要开发者账号在 App ID 上开启 **NFC Tag Reading** capability，并在签名时带上
 `ios/源码/SkyHuiyu/SkyHuiyu.entitlements` 里的 `com.apple.developer.nfc.readersession.formats`。
+
+仓库里的 `ios/安装包/SkyHuiyu-2.0.0-unsigned.ipa` 就是这条流水线构建的产物，
+同时附在 Releases 里。
 
 ---
 
