@@ -62,7 +62,8 @@ async def check(cfg, store, http: aiohttp.ClientSession) -> dict[str, Any]:
     sess = Session.from_row(row)
     if not sess.session2:
         reason = "no_session2"
-        detail = "这份会话缺 session2（信封密钥），是很早抓的老会话"
+        detail = ("这份会话缺 session2（信封密钥）：轻量抓取只拿得到请求头，"
+                  "拿不到登录响应。用完整抓取重新登录一次")
         steps = manual_steps(cfg.data_path)
         log.warning("预检：%s（session id=%s）", detail, row.get("id"))
         return {"ok": False, "reason": reason, "detail": detail,

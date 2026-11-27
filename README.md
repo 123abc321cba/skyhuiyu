@@ -14,9 +14,8 @@ Windows / Android / iOS 三端源码都在这里；Windows 与 Android 提供预
   不用联网也能显示「恶作剧皮皮猫毛绒玩具」而不是一串 SKU。
 - **自带抓取栈**（Windows）：本机 CA、单端口 PAC 代理、443 透传、hosts 自动还原，
   不依赖任何第三方抓包工具。
-- **三种提交方式**：`local` 只入库；`netease` 用自己实现的信封协议直连官方接口；
-  `relay` 把验章与使用交给本机运行的外部验章服务（默认 `127.0.0.1:62759`）。
-  后两者都会在验章后核对库存，避免"提示存了、其实没存"。
+- **两种提交方式**：`local` 只入库；`netease` 用自己实现的信封协议直连官方接口，
+  验章后核对库存，并可在面板上「使用魔法」。
 - **失败可对账**：每次提交都写一条 injection 记录（含 request_id 与原始回包）。
 
 ---
@@ -164,8 +163,7 @@ skyhuiyu.exe --browser            用系统浏览器打开面板
 skyhuiyu.exe --check              体检：CA / 代理 / hosts / 会话 / 端口
 skyhuiyu.exe --print-qr           终端打印配对二维码
 skyhuiyu.exe --backend local      只入库（默认）
-skyhuiyu.exe --backend netease    自己调官方接口
-skyhuiyu.exe --backend relay      交给本机外部验章服务（127.0.0.1:62759）
+skyhuiyu.exe --backend netease    提交官方接口
 skyhuiyu.exe --capture enable     抓取游戏会话（管理员）
 skyhuiyu.exe --capture disable    还原
 skyhuiyu.exe --badge-qr <id>      把某枚徽章渲染成二维码

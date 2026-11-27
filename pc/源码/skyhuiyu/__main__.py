@@ -71,8 +71,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--bind", default=None, help="监听地址（默认取配置文件，首次 0.0.0.0）")
     ap.add_argument("--port", type=int, default=None, help="端口（默认 8765）")
     ap.add_argument("--data-dir", default=None, help="数据目录（数据库+配置）")
-    ap.add_argument("--backend", choices=["local", "netease", "relay"], default=None,
-                    help="收到徽章后干什么：local 只入库 / netease 打官方接口 / relay 交给本机外部服务")
+    ap.add_argument("--backend", choices=["local", "netease"], default=None,
+                    help="收到徽章后干什么：local 只入库 / netease 打官方接口")
     ap.add_argument("--account", default=None, help="netease 后端用哪个抓包账号")
     ap.add_argument("--advertise-host", default=None,
                     help="二维码里写死的 IP（多网卡/虚拟机网卡干扰时用）")

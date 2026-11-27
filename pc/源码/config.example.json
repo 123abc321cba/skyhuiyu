@@ -3,7 +3,6 @@
   "port": 8765,
   "advertise_host": "",
   "backend": "local",
-  "relay_url": "http://127.0.0.1:62759",
   "account": "default",
   "auto_consume": false,
   "allowed_fingerprints": [],

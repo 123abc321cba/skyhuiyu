@@ -14,13 +14,14 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any
 
 import aiohttp
 
 from ..config import Config
-from ..netease_api import NeteaseClient, NeteaseError, Session
+from ..netease_api import NeteaseClient, NeteaseError, Session, parse_handles
 from ..store import BadgeRow, Store
 from .base import InjectResult
 
@@ -55,7 +56,9 @@ class NeteaseBackend:
             return None, "no_session"
         sess = Session.from_row(row)
         if not sess.is_usable():
-            return None, "no_session"
+            # 分开报：缺的是信封密钥，不是「没抓过会话」。轻量抓取只拿得到请求头，
+            # 拿不到登录响应里的 session2，必须完整抓取（强制登录一次）。
+            return None, "session_incomplete"
         return NeteaseClient(self.http, sess), ""
 
     async def _consume_once(
@@ -84,10 +87,14 @@ class NeteaseBackend:
     async def handle(self, badge: BadgeRow) -> InjectResult:
         client, why = await self._client()
         if client is None:
+            detail = ("还没有抓到官方登录态，徽章已入库"
+                      if why == "no_session" else
+                      "这份会话缺 session2（信封密钥）：轻量抓取只拿得到请求头，"
+                      "拿不到登录响应。用完整抓取重新登录一次，徽章已入库")
             return InjectResult(
                 ok=False,
                 action=why or "no_session",
-                detail="还没有抓到官方登录态（跑 capture/mitm_addon.py），徽章已入库",
+                detail=detail,
                 extra={"badge_id": badge.id, "stored": True},
             )
 
@@ -235,4 +242,76 @@ class NeteaseBackend:
             {"badge_id": badge.id, "verdict": outcome.verdict,
              "badge_status": "failed", "http_status": outcome.http_status},
         )
+
+    # ------------------------------------------------------------ 使用魔法
+    async def use_badge(self, badge: BadgeRow) -> InjectResult:
+        """把上一次验章回执里的魔法用掉（consume_item1）。
+
+        验章只负责把魔法存进账号；「用掉」是另一次操作：官方回执里的
+        `get_consumables` 带可用句柄，`consume_item1` 用它触发效果。
+        同一枚徽章通常只对应一个魔法，识别出多个就拒绝猜。
+        """
+        client, why = await self._client()
+        if client is None:
+            return InjectResult(False, why or "no_session",
+                                "会话不完整，先完整抓取一次登录", {"badge_id": badge.id})
+
+        last: tuple[dict[str, Any], dict[str, Any]] | None = None
+        for inj in self.store.list_injections(badge.id, limit=30):
+            if inj.get("result") not in OK_VERDICTS:
+                continue
+            try:
+                resp = json.loads(inj.get("response") or "{}")
+            except Exception:  # noqa: BLE001
+                continue
+            if isinstance(resp, dict) and resp.get("get_consumables"):
+                last = (inj, resp)
+                break
+        if last is None:
+            return InjectResult(False, "no_magic",
+                                "没有可用的魔法记录，先提交一次验章",
+                                {"badge_id": badge.id})
+
+        _inj, resp = last
+        handles = parse_handles(resp)
+        if len(handles) != 1:
+            return InjectResult(
+                False, "magic_selection_required",
+                f"这次回执里有 {len(handles)} 个可用魔法，无法确定用哪一个",
+                {"badge_id": badge.id, "handles": handles[:5]},
+            )
+        handle = handles[0]
+        request_id = str(uuid.uuid4())
+        try:
+            verdict, status, parsed, text = await client.consume(
+                handle=str(handle.get("handle") or ""),
+                consumable_id=handle.get("consumable_id") or 0,
+            )
+        except NeteaseError as exc:
+            return InjectResult(False, exc.code, exc.detail or "网络失败",
+                                {"badge_id": badge.id})
+        self.store.add_injection(
+            badge_id=badge.id, backend=self.name + ":use", request_id=request_id,
+            url=badge.url, http_status=status, result=verdict, detail=text[:400],
+            response=parsed if isinstance(parsed, dict) else {"raw": text[:2000]},
+        )
+        if verdict in ("used", "success"):
+            self.store.set_badge_status(badge.id, "used", "used")
+            return InjectResult(True, "used", "魔法已使用",
+                                {"badge_id": badge.id, "verdict": verdict,
+                                 "badge_status": "used"})
+        if verdict == "cooldown":
+            self.store.set_badge_status(badge.id, "cooldown", verdict)
+            return InjectResult(False, "cooldown", "魔法在冷却中，过一会再试",
+                                {"badge_id": badge.id, "verdict": verdict,
+                                 "badge_status": "cooldown"})
+        detail = {
+            "insufficient_consumables": "库存不足，先重新贴一次徽章补存",
+            "used_no_inventory": "官方说用了，但库存里没有这件",
+            "invalid_consumable_def": "官方不认这个魔法定义",
+            "result_conflict": "官方回执冲突，结果未确认",
+        }.get(verdict, text[:200] or "官方未接受使用请求")
+        self.store.set_badge_status(badge.id, "verified", f"use_failed:{verdict}")
+        return InjectResult(False, verdict, detail,
+                            {"badge_id": badge.id, "verdict": verdict})
 

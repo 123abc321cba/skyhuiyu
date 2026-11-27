@@ -104,11 +104,8 @@ class Config:
     # 广播给手机的地址；空 = 自动探测（第一个非环回 IPv4）
     advertise_host: str = ""
     data_dir: str = ""
-    # 业务后端：local（只入库）/ netease（自己调官方接口）/
-    # relay（把验章与使用交给本机运行的外部验章服务）
+    # 业务后端：local（只入库）/ netease（自己调官方接口）
     backend: str = "local"
-    # relay 后端的本机接口地址
-    relay_url: str = "http://127.0.0.1:62759"
     # netease 后端：抓到的会话用哪个 account 名
     account: str = "default"
     # netease 后端：验证成功后是否顺手 consume（默认为 False，存与用分离）
@@ -192,8 +189,8 @@ class Config:
             for k, v in raw.items():
                 if k in known:
                     setattr(cfg, k, v)
-            # 只认 local / netease / relay；其它值统一落到 netease。
-            if str(getattr(cfg, "backend", "")).lower() not in ("local", "netease", "relay"):
+            # 只认 local / netease；其它值统一落到 netease。
+            if str(getattr(cfg, "backend", "")).lower() not in ("local", "netease"):
                 log.warning("配置里的 backend=%r 已不再支持，改用 netease", cfg.backend)
                 cfg.backend = "netease"
             cfg.data_dir = str(target.parent)

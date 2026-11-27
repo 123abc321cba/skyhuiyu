@@ -172,14 +172,12 @@
         <label>提交方式
           <select id="backendSel" onchange="saveCfg()">
             <option value="local">只入库</option>
-            <option value="netease">自研直连官方</option>
-            <option value="relay">本机外部验章服务</option>
+            <option value="netease">提交官方</option>
           </select>
         </label>
       </div>
       <div class="dim" style="margin-top:8px">
-        只入库不碰官方接口；自研直连需要一份完整会话；外部服务默认
-        <span class="mono">http://127.0.0.1:62759</span>，需要它先登录账号并保持运行。
+        只入库不碰官方接口；提交官方需要一份完整会话（含 session2）。
       </div>
       <div class="row" style="margin-top:14px">
         <label class="switch"><input type="checkbox" id="autoConsume" onchange="saveCfg()">
@@ -382,7 +380,9 @@ function renderLib(){
         <div class="nm">${esc(it.name || it.sk)}<span class="tag">已拥有</span></div>
         <div class="sub mono">${esc(b.uid||'')} · #${b.counter}</div>
         <div class="sub">${fmtTime(b.received_at)} ${st?`<span class="pill s-${esc(st)}" title="${esc(b.note||'')}">${esc(STATUS_CN[st] || st)}</span>`:''}</div>
-        <div class="act"><button class="sm" onclick="verify(${b.badge_id})">提交官方</button></div>
+        <div class="act"><button class="sm" onclick="verify(${b.badge_id})">提交官方</button>${
+          (st === 'verified' || st === 'used')
+            ? `<button class="sm" onclick="useMagic(${b.badge_id})">使用魔法</button>` : ''}</div>
       </div></div>`;
   }).join('');
 }
@@ -396,6 +396,17 @@ async function verify(id){
     catData = null;   // 状态变了，图鉴重新拉，卡片上的判定才会跟着变
     load();
   }catch(e){ toast('提交失败：'+e.message, true); }
+}
+
+async function useMagic(id){
+  if(!confirm('使用这枚徽章对应的魔法？\n\n会消耗一件道具，官方侧不可撤销。')) return;
+  try{
+    const d = await jpost(`/api/badges/${id}/use`, {confirm:true});
+    const inj = d.inject || {};
+    toast((d.ok ? '已使用：' : '失败：') + (inj.detail || inj.action || ''), !d.ok);
+    catData = null;
+    load();
+  }catch(e){ toast('使用失败：'+e.message, true); }
 }
 
 function renderLog(){
@@ -425,7 +436,7 @@ function renderSet(){
   $('#sessinfo').innerHTML = s.present ? `
     <span>账号</span><div class="mono">${esc(s.user_id||'')}</div>
     <span>抓取</span><div class="mono">${s.captured_at ? fmtTime(s.captured_at) : '—'}</div>
-    <span>字段</span><div class="mono">${s.has_level_id?'level✓':'level×'} ${s.has_build_key?'buildkey✓':'buildkey×'}</div>`
+    <span>字段</span><div class="mono">${s.has_level_id?'level✓':'level×'} ${s.has_build_key?'buildkey✓':'buildkey×'} ${s.has_session2?'session2✓':'session2×'}</div>`
     : `<span>状态</span><div class="dim">还没有抓过会话</div>`;
 }
 

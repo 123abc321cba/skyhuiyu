@@ -93,6 +93,7 @@ def build_app(ctx: AppContext) -> web.Application:
     app.router.add_get("/api/badges/{bid:\\d+}/qr.png", _api_badge_qr)
     app.router.add_get("/api/badges/{bid:\\d+}/qr.svg", _api_badge_qr_svg)
     app.router.add_post("/api/badges/{bid:\\d+}/verify", _api_badge_verify)
+    app.router.add_post("/api/badges/{bid:\\d+}/use", _api_badge_use)
     app.router.add_get("/api/injections", _api_injections)
     app.router.add_get("/api/export", _api_export)
     app.router.add_route("*", "/api/capture", _api_capture)
@@ -239,6 +240,7 @@ async def _api_state(request: web.Request) -> web.Response:
             "last_ok": sess_row.get("last_ok"),
             "has_level_id": bool(sess_row.get("level_id")),
             "has_build_key": bool(sess_row.get("build_access_key")),
+            "has_session2": bool((sess_row.get("extra_obj") or {}).get("session2")),
             "user_agent": (sess_row.get("user_agent") or "")[:120],
         })
     return web.json_response({
@@ -434,7 +436,7 @@ def _guard_write(request: web.Request) -> web.Response | None:
 # 每个字段的允许类型与取值范围：写进 config.json 之前必须卡住，
 # 否则一条 POST {"port":"abc"} 就能让服务永远起不来。
 _CONFIG_SCHEMA: dict[str, tuple[type, Any]] = {
-    "backend": (str, {"local", "netease", "relay"}),
+    "backend": (str, {"local", "netease"}),
     "account": (str, None),
     "auto_consume": (bool, None),
     "auto_store": (bool, None),
@@ -617,6 +619,39 @@ async def _api_badge_verify(request: web.Request) -> web.Response:
         )
 
     result = await ctx.backend.handle(badge)
+    return web.json_response({"ok": result.ok, "inject": result.as_dict()})
+
+
+async def _api_badge_use(request: web.Request) -> web.Response:
+    """用掉这枚徽章对应的魔法（consume_item1）。"""
+    ctx = _ctx(request)
+    bid = int(request.match_info["bid"])
+    badge = ctx.store.get_badge(bid)
+    if badge is None:
+        return web.json_response({"ok": False, "error": "not_found"}, status=404)
+
+    blocked = _guard_write(request)
+    if blocked is not None:
+        return blocked
+    try:
+        body = await request.json() if request.can_read_body else {}
+    except Exception:  # noqa: BLE001
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    if not body.get("confirm"):
+        return web.json_response(
+            {"ok": False, "error": "need_confirm",
+             "message": "使用魔法会真的消耗一件道具，确认请带 {\"confirm\": true}"},
+            status=400,
+        )
+
+    use = getattr(ctx.backend, "use_badge", None)
+    if use is None:
+        return web.json_response(
+            {"ok": False, "error": "unsupported",
+             "message": "当前提交方式不支持使用魔法"}, status=400)
+    result = await use(badge)
     return web.json_response({"ok": result.ok, "inject": result.as_dict()})
 
 
