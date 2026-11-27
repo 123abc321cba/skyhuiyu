@@ -168,12 +168,18 @@
   <section id="tab-set">
     <div class="card">
       <h2 style="margin-top:0">验章</h2>
-      <label class="switch">
-        <input type="checkbox" id="autoVerify" onchange="saveCfg()">
-        收到徽章后自动提交官方（需要有效会话）
-      </label>
+      <div class="row" style="margin-top:8px">
+        <label>提交方式
+          <select id="backendSel" onchange="saveCfg()">
+            <option value="local">只入库</option>
+            <option value="netease">自研直连官方</option>
+            <option value="relay">本机外部验章服务</option>
+          </select>
+        </label>
+      </div>
       <div class="dim" style="margin-top:8px">
-        关掉就只入库，不碰官方接口。徽章照样记录、照样显示名称和图标。
+        只入库不碰官方接口；自研直连需要一份完整会话；外部服务默认
+        <span class="mono">http://127.0.0.1:62759</span>，需要它先登录账号并保持运行。
       </div>
       <div class="row" style="margin-top:14px">
         <label class="switch"><input type="checkbox" id="autoConsume" onchange="saveCfg()">
@@ -408,7 +414,7 @@ function renderLog(){
 
 function renderSet(){
   const c = state.config || {}, s = state.session || {};
-  $('#autoVerify').checked = (c.backend === 'netease');
+  $('#backendSel').value = c.backend || 'local';
   $('#autoConsume').checked = !!c.auto_consume;
   $('#autoStore').checked = !!c.auto_store;
   $('#setport').textContent = (c.bind||'') + ':' + (c.port||'');
@@ -486,7 +492,7 @@ function renderCapture(){
 
 async function saveCfg(){  try{
     await jpost('/api/config', {
-      backend: $('#autoVerify').checked ? 'netease' : 'local',
+      backend: $('#backendSel').value,
       auto_consume: $('#autoConsume').checked,
       auto_store: $('#autoStore').checked,
     });

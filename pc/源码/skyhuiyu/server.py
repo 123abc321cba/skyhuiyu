@@ -434,7 +434,7 @@ def _guard_write(request: web.Request) -> web.Response | None:
 # 每个字段的允许类型与取值范围：写进 config.json 之前必须卡住，
 # 否则一条 POST {"port":"abc"} 就能让服务永远起不来。
 _CONFIG_SCHEMA: dict[str, tuple[type, Any]] = {
-    "backend": (str, {"local", "netease"}),
+    "backend": (str, {"local", "netease", "relay"}),
     "account": (str, None),
     "auto_consume": (bool, None),
     "auto_store": (bool, None),
